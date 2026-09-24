@@ -34,7 +34,7 @@ def process_second_innings(innings):
 
 def insert_labels(inning_states, label):
     for state in inning_states:
-        state['label'] = label
+        state['labels'] = label
     return inning_states
 
 def process_data(data):
