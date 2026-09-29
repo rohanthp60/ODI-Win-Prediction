@@ -47,8 +47,9 @@ def get_label(data_item):
 
 
 class Dataset:
-    def __init__(self, data):
+    def __init__(self, data, to_insert_team_indices=False):
         self.data = data
+        self.to_insert_team_indices = to_insert_team_indices
         self.team_to_index = self.get_all_teams_to_index()
 
     def get_all_teams_to_index(self):
@@ -70,7 +71,7 @@ class Dataset:
             state['bowling_team'] = self.get_team_index(bowling_team)
         return inning_states
 
-    def process_data(self, insert_team_indices=False):
+    def process_data(self):
         first_innings_data, second_innings_data = [], []
         for d in self.data:
             first_innings_states = process_first_innings(d)
@@ -84,11 +85,36 @@ class Dataset:
             first_inning_batting_team = d['innings'][0]['team']
             second_inning_batting_team = d['innings'][1]['team']
 
-            if insert_team_indices:
+            if self.to_insert_team_indices:
                 first_innings_states = self.insert_team_indices(first_innings_states, first_inning_batting_team, second_inning_batting_team)
                 second_innings_states = self.insert_team_indices(second_innings_states, second_inning_batting_team, first_inning_batting_team)
 
-            first_innings_data.extend(first_innings_states)
-            second_innings_data.extend(second_innings_states)
+            first_innings_data.append(first_innings_states)
+            second_innings_data.append(second_innings_states)
 
+        self.key_order = list(first_innings_data[0][0].keys()) if first_innings_data else []
+        return first_innings_data, second_innings_data
+
+    def get_data_non_sequential(self):
+        first_innings_data, second_innings_data = self.process_data()
+        first_innings_data = [state for match in first_innings_data for state in match]
+        second_innings_data = [state for match in second_innings_data for state in match]
+        return first_innings_data, second_innings_data
+
+    def to_innings_labels(self, innings):
+        innings_array = [[state[v] for v in self.key_order if v != 'labels'] for state in innings]
+        labels = innings[-1]['labels']
+        return {
+            'innings': innings_array,
+            'labels': labels
+        }
+
+    def get_data_sequential(self):
+        first_innings_data, second_innings_data = self.process_data()
+        first_innings_data = [
+            self.to_innings_labels(match) for match in first_innings_data
+        ]
+        second_innings_data = [
+            self.to_innings_labels(match) for match in second_innings_data
+        ]
         return first_innings_data, second_innings_data
