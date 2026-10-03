@@ -1,14 +1,18 @@
 from pathlib import Path
 import json
 
-def load_data():
-    folder = Path("../data/raw")
+def load_data(path=None):
+    folder = (
+            Path(path)
+            if path is not None
+            else Path(__file__).resolve().parents[2] / "data" / "raw"
+    )
+    if not folder.is_dir():
+            raise FileNotFoundError(f"Data directory not found: {folder}") 
     data = []
-
-    for path in folder.glob("*.json"):
-        with path.open("r", encoding="utf-8") as f:
-            data.append(json.load(f))
-
+    for file_path in sorted(folder.glob("*.json")):
+            with file_path.open("r", encoding="utf-8") as f:
+                    data.append(json.load(f))      
     return data
 
 def filter_with_nation_winners(data):

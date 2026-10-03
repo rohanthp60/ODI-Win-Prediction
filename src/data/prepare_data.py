@@ -1,3 +1,5 @@
+from sklearn.model_selection import train_test_split
+
 def is_extra(delivery):
         if 'extras' not in delivery:
             return False
@@ -46,7 +48,7 @@ def get_label(data_item):
     return 1 if first_innings_team == winning_team else 0
 
 
-class Dataset:
+class DatasetLoad:
     def __init__(self, data, to_insert_team_indices=False):
         self.data = data
         self.to_insert_team_indices = to_insert_team_indices
@@ -95,10 +97,33 @@ class Dataset:
         self.key_order = list(first_innings_data[0][0].keys()) if first_innings_data else []
         return first_innings_data, second_innings_data
 
-    def get_data_non_sequential(self):
+    def get_train_test_data(self, data):
+        train_data, test_data = train_test_split(data, test_size=0.2)
+        train_data = [state for match in train_data for state in match]
+        test_data = [state for match in test_data for state in match]
+        return train_data, test_data
+
+    
+
+    def get_data_non_sequential(self, train_test_split=True):
         first_innings_data, second_innings_data = self.process_data()
-        first_innings_data = [state for match in first_innings_data for state in match]
-        second_innings_data = [state for match in second_innings_data for state in match]
+
+        if train_test_split:
+            first_innings_train, first_innings_test = self.get_train_test_data(first_innings_data)
+            second_innings_train, second_innings_test = self.get_train_test_data(second_innings_data)
+
+            first_innings_data = {
+                'train': first_innings_train,
+                'test': first_innings_test
+            }
+            second_innings_data = {
+                'train': second_innings_train,
+                'test': second_innings_test
+            }
+        else:
+            first_innings_data = [state for match in first_innings_data for state in match]
+            second_innings_data = [state for match in second_innings_data for state in match]
+            
         return first_innings_data, second_innings_data
 
     def to_innings_labels(self, innings):
